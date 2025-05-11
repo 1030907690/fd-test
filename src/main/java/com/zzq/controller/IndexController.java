@@ -6,9 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,11 +19,15 @@ import java.util.concurrent.Executors;
 @RestController
 @RequestMapping("/api/index")
 public class IndexController {
-    private static final Logger log = LoggerFactory.getLogger(IndexController.class);
+    private final Logger log = LoggerFactory.getLogger(IndexController.class);
     private final ExecutorService executorService = Executors.newFixedThreadPool(2000);
 
     @RequestMapping("/fd")
     public String fd(Integer num) {
+        /**
+         * StringWriter 不需要关流
+         * 硬盘文件  需要关流
+         */
         String pathSuffix = "/home/zzq/software/";
         String namePrefix = pathSuffix + "test.txt";
         log.info("thread {}",Thread.currentThread().getName());
@@ -46,12 +48,41 @@ public class IndexController {
             }
         }
 
+        PrintWriter printWriter1 = null;
         try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            printWriter1 = new PrintWriter(namePrefix);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }finally {
+            printWriter1.close();
         }
-        log.info("done");
+        StringWriter sw = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(sw, true);
+        try {
+            int a = 1 / 0;
+        } catch (Exception e) {
+            log.error("异常");
+            e.printStackTrace(printWriter);
+        }
+
+        try {
+            sw.close();
+            printWriter.close();
+        } catch (IOException ioException) {
+            log.error("异常日志：关闭异常详情Writer异常");
+        }
+        // 异常的详情
+        String expDetail = sw.toString();
+
+
+        log.info("expDetail {} ", expDetail);
+
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
         return "fd";
     }
 }
